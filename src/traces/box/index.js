@@ -31,16 +31,21 @@ module.exports = {
         description: [
             'In vertical (horizontal) box plots,',
             'statistics are computed using `y` (`x`) values.',
-            'By supplying an `x` (`y`) array, one box per distinct x (y) value',
-            'is drawn',
+
+            'By supplying an `x` (`y`) array, one box per distinct x (y) value is drawn',
             'If no `x` (`y`) {array} is provided, a single box is drawn.',
-            'That box position is then positioned with',
-            'with `name` or with `x0` (`y0`) if provided.',
+            'In this case, the box is positioned with `name` or with `x0` (`y0`) if provided.',
+
             'Each box spans from quartile 1 (Q1) to quartile 3 (Q3).',
-            'The second quartile (Q2) is marked by a line inside the box.',
+            'The second quartile (Q2, i.e. the median) is marked by a line inside the box.',
             'By default, the whiskers correspond to the box\' edges',
             '+/- 1.5 times the interquartile range (IQR: Q3-Q1),',
-            'see *boxpoints* for other options.'
+            'see *boxpoints* for other options.',
+
+            'Users can override the computed statistics using attributes',
+            '`q1`, `median` and `q3`. Attributes `lowerfence`, `upperfence`, `outliers`,',
+            '`mean`, `sd` and `notchspan` can also be used to render the boxes using',
+            'precomputed statistics.'
         ].join(' ')
     }
 };

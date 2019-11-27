@@ -10,9 +10,11 @@
 
 var isNumeric = require('fast-isnumeric');
 
-var Lib = require('../../lib');
-var _ = Lib._;
 var Axes = require('../../plots/cartesian/axes');
+var Lib = require('../../lib');
+
+var BADNUM = require('../../constants/numerical').BADNUM;
+var _ = Lib._;
 
 // outlier definition based on http://www.physics.csbsju.edu/stats/box2.html
 module.exports = function calc(gd, trace) {
@@ -24,7 +26,7 @@ module.exports = function calc(gd, trace) {
     // N.B. violin reuses same Box.calc
     var numKey = trace.type === 'violin' ? '_numViolins' : '_numBoxes';
 
-    var i;
+    var i, j;
     var valAxis, valLetter;
     var posAxis, posLetter;
 
@@ -40,126 +42,234 @@ module.exports = function calc(gd, trace) {
         posLetter = 'x';
     }
 
-    var val = valAxis.makeCalcdata(trace, valLetter);
-    var pos = getPos(trace, posLetter, posAxis, val, fullLayout[numKey]);
-
-    var dv = Lib.distinctVals(pos);
+    var posArray = getPos(trace, posLetter, posAxis, fullLayout[numKey]);
+    var dv = Lib.distinctVals(posArray);
     var posDistinct = dv.vals;
     var dPos = dv.minDiff / 2;
-    var posBins = makeBins(posDistinct, dPos);
 
-    var pLen = posDistinct.length;
-    var ptsPerBin = initNestedArray(pLen);
-
-    // bin pts info per position bins
-    for(i = 0; i < trace._length; i++) {
-        var v = val[i];
-        if(!isNumeric(v)) continue;
-
-        var n = Lib.findBin(pos[i], posBins);
-        if(n >= 0 && n < pLen) {
-            var pt = {v: v, i: i};
-            arraysToCalcdata(pt, trace, i);
-            ptsPerBin[n].push(pt);
-        }
-    }
-
+    // item in trace calcdata
     var cdi;
-    var ptFilterFn = (trace.boxpoints || trace.points) === 'all' ?
-        Lib.identity :
-        function(pt) { return (pt.v < cdi.lf || pt.v > cdi.uf); };
+    // single sample point
+    var pt;
+    // single sample value
+    var v;
 
-    var minLowerNotch = Infinity;
-    var maxUpperNotch = -Infinity;
+    if(trace._hasPreCompStats) {
+        var d2c = function(k) { return valAxis.d2c((trace[k] || [])[i]); };
+        var minVal = Infinity;
+        var maxVal = -Infinity;
 
-    // build calcdata trace items, one item per distinct position
-    for(i = 0; i < pLen; i++) {
-        if(ptsPerBin[i].length > 0) {
-            var pts = ptsPerBin[i].sort(sortByVal);
-            var boxVals = pts.map(extractVal);
-            var N = boxVals.length;
+        for(i = 0; i < trace._length; i++) {
+            var posi = posArray[i];
+            if(!isNumeric(posi)) continue;
 
             cdi = {};
-            cdi.pos = posDistinct[i];
-            cdi.pts = pts;
+            cdi.pos = cdi[posLetter] = posi;
 
-            // Sort categories by values
-            cdi[posLetter] = cdi.pos;
-            cdi[valLetter] = cdi.pts.map(extractVal);
+            cdi.q1 = d2c('q1');
+            cdi.med = d2c('median');
+            cdi.q3 = d2c('q3');
 
-            cdi.min = boxVals[0];
-            cdi.max = boxVals[N - 1];
-            cdi.mean = Lib.mean(boxVals, N);
-            cdi.sd = Lib.stdev(boxVals, N, cdi.mean);
-
-            // median
-            cdi.med = Lib.interp(boxVals, 0.5);
-
-            var quartilemethod = trace.quartilemethod;
-
-            if((N % 2) && (quartilemethod === 'exclusive' || quartilemethod === 'inclusive')) {
-                var lower;
-                var upper;
-
-                if(quartilemethod === 'exclusive') {
-                    // do NOT include the median in either half
-                    lower = boxVals.slice(0, N / 2);
-                    upper = boxVals.slice(N / 2 + 1);
-                } else if(quartilemethod === 'inclusive') {
-                    // include the median in either half
-                    lower = boxVals.slice(0, N / 2 + 1);
-                    upper = boxVals.slice(N / 2);
+            // pts2 is for plot (filtered set)
+            // pts is for hover/select (unfiltered set)
+            var pts2 = cdi.pts2 = cdi.pts = [];
+            if(trace.outliers && Lib.isArrayOrTypedArray(trace.outliers[i])) {
+                for(j = 0; j < trace.outliers[i].length; j++) {
+                    v = valAxis.d2c(trace.outliers[i][j]);
+                    // TODO text/hovertext would have to be 2d to match
+                    //      outlier points
+                    // arraysToCalcdata(pt, trace, j);
+                    if(v !== BADNUM) cdi.pts2.push({v: v, i: i});
                 }
-
-                cdi.q1 = Lib.interp(lower, 0.5);
-                cdi.q3 = Lib.interp(upper, 0.5);
-            } else {
-                cdi.q1 = Lib.interp(boxVals, 0.25);
-                cdi.q3 = Lib.interp(boxVals, 0.75);
+                cdi.pts2.sort(sortByVal);
             }
 
-            // lower and upper fences - last point inside
-            // 1.5 interquartile ranges from quartiles
-            cdi.lf = Math.min(
-                cdi.q1,
-                boxVals[Math.min(
-                    Lib.findBin(2.5 * cdi.q1 - 1.5 * cdi.q3, boxVals, true) + 1,
-                    N - 1
-                )]
-            );
-            cdi.uf = Math.max(
-                cdi.q3,
-                boxVals[Math.max(
-                    Lib.findBin(2.5 * cdi.q3 - 1.5 * cdi.q1, boxVals),
-                    0
-                )]
-            );
+            if(cdi.med !== BADNUM && cdi.q1 !== BADNUM && cdi.q3 !== BADNUM &&
+                cdi.med >= cdi.q1 && cdi.q3 >= cdi.med
+            ) {
+                var lf = d2c('lowerfence');
+                cdi.lf = (lf !== BADNUM && lf <= cdi.q1) ? lf : cdi.q1;
 
-            // lower and upper outliers - 3 IQR out (don't clip to max/min,
-            // this is only for discriminating suspected & far outliers)
-            cdi.lo = 4 * cdi.q1 - 3 * cdi.q3;
-            cdi.uo = 4 * cdi.q3 - 3 * cdi.q1;
+                var uf = d2c('upperfence');
+                cdi.uf = (uf !== BADNUM && uf >= cdi.q3) ? uf : cdi.q3;
 
-            // lower and upper notches ~95% Confidence Intervals for median
-            var iqr = cdi.q3 - cdi.q1;
-            var mci = 1.57 * iqr / Math.sqrt(N);
-            cdi.ln = cdi.med - mci;
-            cdi.un = cdi.med + mci;
-            minLowerNotch = Math.min(minLowerNotch, cdi.ln);
-            maxUpperNotch = Math.max(maxUpperNotch, cdi.un);
+                cdi.mean = d2c('mean');
+                cdi.sd = d2c('sd');
 
-            cdi.pts2 = pts.filter(ptFilterFn);
+                var ns = d2c('notchspan');
+                ns = (ns !== BADNUM && ns > 0) ? ns : 0;
+                cdi.ln = cdi.med - ns;
+                cdi.un = cdi.med + ns;
+
+                var imin = cdi.lf;
+                var imax = cdi.uf;
+                if(trace.boxpoints && pts2.length) {
+                    imin = Math.min(imin, pts2[0].v);
+                    imax = Math.max(imax, pts2[pts2.length - 1].v);
+                }
+                if(trace.notched) {
+                    imin = Math.min(imin, cdi.ln);
+                    imax = Math.max(imax, cdi.un);
+                }
+                cdi.min = imin;
+                cdi.max = imax;
+
+                // TODO do we need these
+                // lo ?
+                // uo ?
+                // [valLetter] ?
+            } else {
+                Lib.warn('Invalid input - make sure that q1 <= median <= q3');
+
+                var v0;
+                if(cdi.med !== BADNUM) {
+                    v0 = cdi.med;
+                } else if(cdi.q1 !== BADNUM) {
+                    if(cdi.q3 !== BADNUM) v0 = (cdi.q1 + cdi.q3) / 2;
+                    else v0 = cdi.q1;
+                } else if(cdi.q3 !== BADNUM) {
+                    v0 = cdi.q3;
+                } else {
+                    v0 = 0;
+                }
+
+                // draw box as line segment
+                cdi.med = v0;
+                cdi.q1 = cdi.q3 = v0;
+                cdi.lf = cdi.uf = v0;
+                cdi.mean = cdi.sd = v0;
+                cdi.ln = cdi.un = v0;
+                cdi.min = cdi.max = v0;
+            }
+
+            minVal = Math.min(minVal, cdi.min);
+            maxVal = Math.max(maxVal, cdi.max);
 
             cd.push(cdi);
         }
+
+        trace._extremes[valAxis._id] = Axes.findExtremes(valAxis,
+            [minVal, maxVal],
+            {padded: true}
+        );
+
+        // TODO how would this work ???
+        // calcSelection(cd, trace);
+    } else {
+        var valArray = valAxis.makeCalcdata(trace, valLetter);
+        var posBins = makeBins(posDistinct, dPos);
+        var pLen = posDistinct.length;
+        var ptsPerBin = initNestedArray(pLen);
+
+        // bin pts info per position bins
+        for(i = 0; i < trace._length; i++) {
+            v = valArray[i];
+            if(!isNumeric(v)) continue;
+
+            var n = Lib.findBin(posArray[i], posBins);
+            if(n >= 0 && n < pLen) {
+                pt = {v: v, i: i};
+                arraysToCalcdata(pt, trace, i);
+                ptsPerBin[n].push(pt);
+            }
+        }
+
+        var ptFilterFn = (trace.boxpoints || trace.points) === 'all' ?
+            Lib.identity :
+            function(pt) { return (pt.v < cdi.lf || pt.v > cdi.uf); };
+
+        var minLowerNotch = Infinity;
+        var maxUpperNotch = -Infinity;
+
+        // build calcdata trace items, one item per distinct position
+        for(i = 0; i < pLen; i++) {
+            if(ptsPerBin[i].length > 0) {
+                var pts = ptsPerBin[i].sort(sortByVal);
+                var boxVals = pts.map(extractVal);
+                var N = boxVals.length;
+
+                cdi = {};
+                cdi.pos = posDistinct[i];
+                cdi.pts = pts;
+
+                // Sort categories by values
+                cdi[posLetter] = cdi.pos;
+                cdi[valLetter] = cdi.pts.map(extractVal);
+
+                cdi.min = boxVals[0];
+                cdi.max = boxVals[N - 1];
+                cdi.mean = Lib.mean(boxVals, N);
+                cdi.sd = Lib.stdev(boxVals, N, cdi.mean);
+
+                // median
+                cdi.med = Lib.interp(boxVals, 0.5);
+
+                var quartilemethod = trace.quartilemethod;
+
+                if((N % 2) && (quartilemethod === 'exclusive' || quartilemethod === 'inclusive')) {
+                    var lower;
+                    var upper;
+
+                    if(quartilemethod === 'exclusive') {
+                        // do NOT include the median in either half
+                        lower = boxVals.slice(0, N / 2);
+                        upper = boxVals.slice(N / 2 + 1);
+                    } else if(quartilemethod === 'inclusive') {
+                        // include the median in either half
+                        lower = boxVals.slice(0, N / 2 + 1);
+                        upper = boxVals.slice(N / 2);
+                    }
+
+                    cdi.q1 = Lib.interp(lower, 0.5);
+                    cdi.q3 = Lib.interp(upper, 0.5);
+                } else {
+                    cdi.q1 = Lib.interp(boxVals, 0.25);
+                    cdi.q3 = Lib.interp(boxVals, 0.75);
+                }
+
+                // lower and upper fences - last point inside
+                // 1.5 interquartile ranges from quartiles
+                cdi.lf = Math.min(
+                    cdi.q1,
+                    boxVals[Math.min(
+                        Lib.findBin(2.5 * cdi.q1 - 1.5 * cdi.q3, boxVals, true) + 1,
+                        N - 1
+                    )]
+                );
+                cdi.uf = Math.max(
+                    cdi.q3,
+                    boxVals[Math.max(
+                        Lib.findBin(2.5 * cdi.q3 - 1.5 * cdi.q1, boxVals),
+                        0
+                    )]
+                );
+
+                // lower and upper outliers - 3 IQR out (don't clip to max/min,
+                // this is only for discriminating suspected & far outliers)
+                cdi.lo = 4 * cdi.q1 - 3 * cdi.q3;
+                cdi.uo = 4 * cdi.q3 - 3 * cdi.q1;
+
+                // lower and upper notches ~95% Confidence Intervals for median
+                var iqr = cdi.q3 - cdi.q1;
+                var mci = 1.57 * iqr / Math.sqrt(N);
+                cdi.ln = cdi.med - mci;
+                cdi.un = cdi.med + mci;
+                minLowerNotch = Math.min(minLowerNotch, cdi.ln);
+                maxUpperNotch = Math.max(maxUpperNotch, cdi.un);
+
+                cdi.pts2 = pts.filter(ptFilterFn);
+
+                cd.push(cdi);
+            }
+        }
+
+        trace._extremes[valAxis._id] = Axes.findExtremes(valAxis,
+            trace.notched ? valArray.concat([minLowerNotch, maxUpperNotch]) : valArray,
+            {padded: true}
+        );
+
+        calcSelection(cd, trace);
     }
-
-    calcSelection(cd, trace);
-
-    trace._extremes[valAxis._id] = Axes.findExtremes(valAxis,
-        trace.notched ? val.concat([minLowerNotch, maxUpperNotch]) : val,
-        {padded: true}
-    );
 
     if(cd.length > 0) {
         cd[0].t = {
@@ -191,7 +301,7 @@ module.exports = function calc(gd, trace) {
 // so if you want one box
 // per trace, set x0 (y0) to the x (y) value or category for this trace
 // (or set x (y) to a constant array matching y (x))
-function getPos(trace, posLetter, posAxis, val, num) {
+function getPos(trace, posLetter, posAxis, num) {
     if(posLetter in trace) {
         return posAxis.makeCalcdata(trace, posLetter);
     }
@@ -218,7 +328,11 @@ function getPos(trace, posLetter, posAxis, val, num) {
         posAxis.r2c_just_indices(pos0) :
         posAxis.d2c(pos0, 0, trace[posLetter + 'calendar']);
 
-    return val.map(function() { return pos0c; });
+    var len = trace._length;
+    var out = new Array(len);
+    for(var i = 0; i < len; i++) out[i] = pos0c;
+
+    return out;
 }
 
 function makeBins(x, dx) {

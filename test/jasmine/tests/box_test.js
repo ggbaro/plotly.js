@@ -201,6 +201,217 @@ describe('Test boxes supplyDefaults', function() {
         expect(gd._fullData[0].alignmentgroup).toBe(undefined, 'alignementgroup');
         expect(gd._fullData[0].offsetgroup).toBe(undefined, 'offsetgroup');
     });
+
+    describe('q1/median/q3 API signature', function() {
+        function _check(msg, t, exp) {
+            var gd = { data: [Lib.extendFlat({type: 'box'}, t)] };
+            supplyAllDefaults(gd);
+            for(var k in exp) {
+                expect(gd._fullData[0][k]).toBe(exp[k], msg + ' | ' + k);
+            }
+        }
+
+        it('should result in correct orientation results', function() {
+            _check('insufficient (no median)', {
+                q1: [1],
+                q3: [3]
+            }, {
+                visible: false,
+                orientation: undefined,
+                _length: undefined
+            });
+            // TODO would need to add dx and dy to work correctly
+            // _check('base', {
+            //     q1: [1],
+            //     median: [2],
+            //     q3: [3]
+            // }, {
+            //     visible: true,
+            //     orientation: 'v',
+            //     _length: 1
+            // });
+            _check('with set x', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3]
+            }, {
+                visible: true,
+                orientation: 'v',
+                _length: 1
+            });
+            _check('with set y', {
+                y: [0],
+                q1: [1],
+                median: [2],
+                q3: [3]
+            }, {
+                visible: true,
+                orientation: 'h',
+                _length: 1
+            });
+        });
+
+        it('should coerce lowerfence and upperfence', function() {
+            var lf = [-1];
+            var uf = [5];
+
+            _check('insufficient (no median)', {
+                q1: [1],
+                q3: [3],
+                lowerfence: lf,
+                upperfence: uf
+            }, {
+                visible: false,
+                lowerfence: undefined,
+                upperfence: undefined
+            });
+            _check('x/y signature', {
+                x: [0],
+                y: [1],
+                lowerfence: lf,
+                upperfence: uf
+            }, {
+                visible: true,
+                lowerfence: undefined,
+                upperfence: undefined
+            });
+            _check('base', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                lowerfence: lf,
+                upperfence: uf
+            }, {
+                visible: true,
+                lowerfence: lf,
+                upperfence: uf
+            });
+        });
+
+        it('should lead to correct boxmean default', function() {
+            var mean = [2.2];
+            var sd = [0.1];
+
+            _check('x/y signature', {
+                x: [0],
+                y: [1],
+            }, {
+                boxmean: false
+            });
+            _check('base', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3]
+            }, {
+                boxmean: false
+            });
+            _check('with mean set', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                mean: mean
+            }, {
+                boxmean: true,
+                mean: mean
+            });
+            _check('with mean and sd set', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                mean: mean,
+                sd: sd
+            }, {
+                boxmean: 'sd',
+                mean: mean,
+                sd: sd
+            });
+        });
+
+        it('should lead to correct notched default', function() {
+            var ns = [0.05];
+
+            _check('x/y signature', {
+                x: [0],
+                y: [1],
+                notchwidth: 0.1
+            }, {
+                notched: true,
+                notchwidth: 0.1
+            });
+            _check('base', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                notchwidth: 0.1
+            }, {
+                notched: false,
+                notchwidth: undefined
+            });
+            _check('with notchspan set', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                notchspan: ns
+            }, {
+                notchspan: ns,
+                notched: true,
+                notchwidth: 0.25
+            });
+        });
+
+        it('should lead to correct boxpoints default', function() {
+            var outliers = [[-10, 10]];
+
+            _check('with outliers not set', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3]
+            }, {
+                outliers: undefined,
+                boxpoints: false
+            });
+            _check('with outliers set', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                outliers: outliers
+            }, {
+                outliers: outliers,
+                boxpoints: 'outliers'
+            });
+            _check('with outliers set and boxpoints set to *all*', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                outliers: outliers,
+                boxpoints: 'all'
+            }, {
+                outliers: outliers,
+                boxpoints: 'outliers'
+            });
+            _check('with outliers set and boxpoints set to *suspectedoutliers*', {
+                x: [0],
+                q1: [1],
+                median: [2],
+                q3: [3],
+                outliers: outliers,
+                boxpoints: 'suspectedoutliers'
+            }, {
+                outliers: outliers,
+                boxpoints: 'outliers'
+            });
+        });
+    });
 });
 
 describe('Test box hover:', function() {
@@ -700,5 +911,104 @@ describe('Test box calc', function() {
                 expect(cd[0].q3).toBe(spec.methods[m].q3, ['q3', m, name].join(' | '));
             }
         }
+    });
+
+    describe('with q1/median/q3 API signature inputs', function() {
+        function base(patch) {
+            return Lib.extendFlat({
+                x: [1, 2],
+                lowerfence: [0, 1],
+                q1: [1, 2],
+                median: [2, 3],
+                q3: [3, 4],
+                upperfence: [4, 5]
+            }, patch);
+        }
+
+        function _assert(msg, d, keys, exp) {
+            var actual = keys.map(function(k) { return d[k]; });
+            expect(actual).withContext(keys.join(', ') + ' | ' + msg).toEqual(exp);
+        }
+
+        it('should skip box corresponding to non-numeric positions', function() {
+            var cd = _calc(base({x: [null, 2]}));
+            expect(cd.length).toBe(1, 'has length 1');
+            _assert('', cd[0],
+                ['x', 'lf', 'q1', 'med', 'q3', 'uf'],
+                [2, 1, 2, 3, 4, 5]
+            );
+        });
+
+        it('should warn when q1/median/q3 values are invalid', function() {
+            spyOn(Lib, 'warn');
+
+            var cd = _calc(base({q1: [null, 2]}));
+            _assert('non-numeric q1', cd[0],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [2, 2, 2, 2, 2]
+            );
+            cd = _calc(base({q1: [10, 2]}));
+            _assert('invalid q1', cd[0],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [2, 2, 2, 2, 2]
+            );
+
+            cd = _calc(base({q3: [3, null]}));
+            _assert('non-numeric q3', cd[1],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [3, 3, 3, 3, 3]
+            );
+            cd = _calc(base({q3: [3, -10]}));
+            _assert('invalid q3', cd[1],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [3, 3, 3, 3, 3]
+            );
+
+            cd = _calc(base({median: [null, 3]}));
+            _assert('non-numeric median', cd[0],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [2, 2, 2, 2, 2]
+            );
+            cd = _calc(base({median: [null, 3], q1: [null, 2]}));
+            _assert('non-numeric median AND q1', cd[0],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [3, 3, 3, 3, 3]
+            );
+            cd = _calc(base({median: [null, 3], q3: [null, 4]}));
+            _assert('non-numeric median AND q3', cd[0],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [1, 1, 1, 1, 1]
+            );
+            cd = _calc(base({median: [null, 3], q1: [null, 2], q3: [null, 4]}));
+            _assert('non-numeric median, q1 and q3', cd[0],
+                ['lf', 'q1', 'med', 'q3', 'uf'],
+                [0, 0, 0, 0, 0]
+            );
+
+            expect(Lib.warn).toHaveBeenCalledTimes(8);
+        });
+
+        it('should set *lf* to *q1* when input is invalid', function() {
+
+        });
+
+        it('should set *uf* to *q3* when input is invalid', function() {
+
+        });
+
+        it('should fill *mean* and *sd*', function() {
+
+        });
+
+        it('should set notchspan to 0 when input is invalid', function() {
+
+        });
+
+        it('should fill in *pts* and *pts2* arrays with outlier items', function() {
+        });
+
+        it('should compute correct *min* and *max* values', function() {
+
+        });
     });
 });

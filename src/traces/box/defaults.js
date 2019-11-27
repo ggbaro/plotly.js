@@ -22,16 +22,42 @@ function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
     handleSampleDefaults(traceIn, traceOut, coerce, layout);
     if(traceOut.visible === false) return;
 
+    var hasPreCompStats = traceOut._hasPreCompStats;
+
+    if(hasPreCompStats) {
+        coerce('lowerfence');
+        coerce('upperfence');
+    }
+
     coerce('line.color', (traceIn.marker || {}).color || defaultColor);
     coerce('line.width');
     coerce('fillcolor', Color.addOpacity(traceOut.line.color, 0.5));
 
+    var boxmeanDflt;
+    if(hasPreCompStats) {
+        var mean = coerce('mean');
+        var sd = coerce('sd');
+        if(mean && mean.length) {
+            boxmeanDflt = true;
+            if(sd && sd.length) boxmeanDflt = 'sd';
+        }
+    }
+    coerce('boxmean', boxmeanDflt);
+
     coerce('whiskerwidth');
-    coerce('boxmean');
     coerce('width');
     coerce('quartilemethod');
 
-    var notched = coerce('notched', traceIn.notchwidth !== undefined);
+    var notchedDflt;
+    if(hasPreCompStats) {
+        var notchspan = coerce('notchspan');
+        if(notchspan && notchspan.length) {
+            notchedDflt = true;
+        }
+    } else if(Lib.validate(traceIn.notchwidth, attributes.notchwidth)) {
+        notchedDflt = true;
+    }
+    var notched = coerce('notched', notchedDflt);
     if(notched) coerce('notchwidth');
 
     handlePointsDefaults(traceIn, traceOut, coerce, {prefix: 'box'});
@@ -40,26 +66,61 @@ function supplyDefaults(traceIn, traceOut, defaultColor, layout) {
 function handleSampleDefaults(traceIn, traceOut, coerce, layout) {
     var y = coerce('y');
     var x = coerce('x');
+    var hasY = y && y.length;
     var hasX = x && x.length;
+
+    var q1, median, q3;
+    if(traceOut.type === 'box') {
+        q1 = coerce('q1');
+        median = coerce('median');
+        q3 = coerce('q3');
+
+        traceOut._hasPreCompStats = (
+            q1 && q1.length &&
+            median && median.length &&
+            q3 && q3.length
+        );
+    }
 
     var defaultOrientation, len;
 
-    if(y && y.length) {
-        defaultOrientation = 'v';
+    if(traceOut._hasPreCompStats) {
         if(hasX) {
-            len = Math.min(Lib.minRowLength(x), Lib.minRowLength(y));
+            defaultOrientation = 'v';
+            len = Math.min(Lib.minRowLength(x),
+                Lib.minRowLength(q1), Lib.minRowLength(median), Lib.minRowLength(q3));
+        } else if(hasY) {
+            defaultOrientation = 'h';
+            len = Math.min(Lib.minRowLength(y),
+                Lib.minRowLength(q1), Lib.minRowLength(median), Lib.minRowLength(q3));
         } else {
-            coerce('x0');
-            len = Lib.minRowLength(y);
+            len = 0;
+
+            // TODO could coerce x0/dx OR y0/dy !
         }
-    } else if(hasX) {
-        defaultOrientation = 'h';
-        coerce('y0');
-        len = Lib.minRowLength(x);
     } else {
+        if(hasY) {
+            defaultOrientation = 'v';
+            if(hasX) {
+                len = Math.min(Lib.minRowLength(x), Lib.minRowLength(y));
+            } else {
+                coerce('x0');
+                len = Lib.minRowLength(y);
+            }
+        } else if(hasX) {
+            defaultOrientation = 'h';
+            coerce('y0');
+            len = Lib.minRowLength(x);
+        } else {
+            len = 0;
+        }
+    }
+
+    if(!len) {
         traceOut.visible = false;
         return;
     }
+
     traceOut._length = len;
 
     var handleCalendarDefaults = Registry.getComponentMethod('calendars', 'handleTraceDefaults');
@@ -71,17 +132,25 @@ function handleSampleDefaults(traceIn, traceOut, coerce, layout) {
 function handlePointsDefaults(traceIn, traceOut, coerce, opts) {
     var prefix = opts.prefix;
 
-    var outlierColorDflt = Lib.coerce2(traceIn, traceOut, attributes, 'marker.outliercolor');
-    var lineoutliercolor = coerce('marker.line.outliercolor');
+    var modeDflt;
+    if(traceOut._hasPreCompStats) {
+        var outliers = coerce('outliers');
+        modeDflt = (outliers && Lib.isArrayOrTypedArray(outliers)) ? 'outliers' : false;
+    } else {
+        var outlierColorDflt = Lib.coerce2(traceIn, traceOut, attributes, 'marker.outliercolor');
+        var lineoutliercolor = coerce('marker.line.outliercolor');
+        if(outlierColorDflt || lineoutliercolor) modeDflt = 'suspectedoutliers';
+    }
 
-    var points = coerce(
-        prefix + 'points',
-        (outlierColorDflt || lineoutliercolor) ? 'suspectedoutliers' : undefined
-    );
+    var mode = coerce(prefix + 'points', modeDflt);
 
-    if(points) {
-        coerce('jitter', points === 'all' ? 0.3 : 0);
-        coerce('pointpos', points === 'all' ? -1.5 : 0);
+    if(traceOut._hasPreCompStats && (mode !== false || mode === 'outliers')) {
+        traceOut[prefix + 'points'] = 'outliers';
+    }
+
+    if(mode) {
+        coerce('jitter', mode === 'all' ? 0.3 : 0);
+        coerce('pointpos', mode === 'all' ? -1.5 : 0);
 
         coerce('marker.symbol');
         coerce('marker.opacity');
@@ -90,7 +159,7 @@ function handlePointsDefaults(traceIn, traceOut, coerce, opts) {
         coerce('marker.line.color');
         coerce('marker.line.width');
 
-        if(points === 'suspectedoutliers') {
+        if(mode === 'suspectedoutliers') {
             coerce('marker.line.outliercolor', traceOut.marker.color);
             coerce('marker.line.outlierwidth');
         }

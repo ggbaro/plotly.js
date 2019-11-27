@@ -66,9 +66,60 @@ module.exports = {
         ].join(' ')
     },
 
+    q1: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc+clearAxisTypes',
+        description: [
+            '..',
+        ].join(' ')
+    },
+    median: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc+clearAxisTypes',
+        description: [
+            '..'
+
+        ].join(' ')
+    },
+    q3: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc+clearAxisTypes',
+        description: [
+            '..'
+        ].join(' ')
+    },
+    lowerfence: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc',
+        description: [
+            '..'
+        ].join(' ')
+    },
+    upperfence: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc',
+        description: [
+            '..'
+        ].join(' ')
+    },
+    outliers: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc',
+        description: [
+            ' !!! 2D !!! '
+        ].join(' ')
+    },
+
     notched: {
         valType: 'boolean',
         role: 'info',
+        dflt: false,
         editType: 'calc',
         description: [
             'Determines whether or not notches are drawn.',
@@ -90,6 +141,14 @@ module.exports = {
             'Sets the width of the notches relative to',
             'the box\' width.',
             'For example, with 0, the notches are as wide as the box(es).'
+        ].join(' ')
+    },
+    notchspan: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc',
+        description: [
+            '..'
         ].join(' ')
     },
 
@@ -146,6 +205,22 @@ module.exports = {
             'If *true*, the mean of the box(es)\' underlying distribution is',
             'drawn as a dashed line inside the box(es).',
             'If *sd* the standard deviation is also drawn.'
+        ].join(' ')
+    },
+    mean: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc',
+        description: [
+            '..'
+        ].join(' ')
+    },
+    sd: {
+        valType: 'data_array',
+        role: 'info',
+        editType: 'calc',
+        description: [
+            '..'
         ].join(' ')
     },
 
