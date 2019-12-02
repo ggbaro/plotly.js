@@ -13,7 +13,9 @@ var Color = require('../../components/color');
 var Lib = require('../../lib');
 
 function style(gd) {
-    gd._fullLayout._sunburstlayer.selectAll('.trace').each(function(cd) {
+    var s = gd._fullLayout._sunburstlayer.selectAll('.trace');
+
+    s.each(function(cd) {
         var gTrace = d3.select(this);
         var cd0 = cd[0];
         var trace = cd0.trace;

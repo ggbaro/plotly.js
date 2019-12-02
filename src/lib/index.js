@@ -1194,14 +1194,14 @@ lib.getTextTransform = function(opts) {
     var transformRotate;
     var transformTranslate;
 
-    if(scale < 1) transformScale = 'scale(' + scale + ') ';
+    if(scale < 1) transformScale = 'scale(' + scale + ')';
     else {
         scale = 1;
         transformScale = '';
     }
 
     transformRotate = (rotate) ?
-        'rotate(' + rotate + ' ' + textX + ' ' + textY + ') ' : '';
+        'rotate(' + rotate + ' ' + textX + ' ' + textY + ')' : '';
 
     // Note that scaling also affects the center of the text box
     var translateX = (targetX - scale * textX);

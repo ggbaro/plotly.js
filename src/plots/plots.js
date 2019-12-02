@@ -1472,6 +1472,9 @@ plots.supplyLayoutGlobalDefaults = function(layoutIn, layoutOut, formatObj) {
     coerce('title.pad.b');
     coerce('title.pad.l');
 
+    coerce('uniformtext.minsize');
+    coerce('uniformtext.mode');
+
     // Make sure that autosize is defaulted to *true*
     // on layouts with no set width and height for backward compatibly,
     // in particular https://plot.ly/javascript/responsive-fluid-layout/
