@@ -186,14 +186,29 @@ function plot(gd, cdModule) {
                         hasOutsideText = true;
                     }
 
+                    var rotate = transform.rotate;
+                    var scale = transform.scale;
+                    if(scale > 1) {
+                        scale = 1;
+                    }
+
+                    var midX = (textBB.left + textBB.right) / 2 * scale;
+                    var midY = (textBB.top + textBB.bottom) / 2 * scale;
+
+                    var a = rotate * Math.PI / 180;
+                    var cosA = Math.cos(a);
+                    var sinA = Math.sin(a);
+                    var offX = midX * cosA - midY * sinA;
+                    var offY = midX * sinA + midY * cosA;
+
                     sliceText.attr('transform',
-                        'translate(' + translateX + ',' + translateY + ')' +
-                        (transform.scale < 1 ? ('scale(' + transform.scale + ')') : '') +
-                        (transform.rotate ? ('rotate(' + transform.rotate + ')') : '') +
                         'translate(' +
-                            (-(textBB.left + textBB.right) / 2) + ',' +
-                            (-(textBB.top + textBB.bottom) / 2) +
-                        ')');
+                            (translateX - offX) + ',' +
+                            (translateY - offY) +
+                        ')' +
+                        (scale < 1 ? ('scale(' + scale + ')') : '') +
+                        (rotate ? ('rotate(' + rotate + ')') : '')
+                    );
                 });
             });
 
