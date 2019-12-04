@@ -188,27 +188,19 @@ function plot(gd, cdModule) {
 
                     var rotate = transform.rotate;
                     var scale = transform.scale;
-                    if(scale > 1) {
-                        scale = 1;
-                    }
-
-                    var midX = (textBB.left + textBB.right) / 2 * scale;
-                    var midY = (textBB.top + textBB.bottom) / 2 * scale;
+                    if(scale > 1) scale = 1;
 
                     var a = rotate * Math.PI / 180;
                     var cosA = Math.cos(a);
                     var sinA = Math.sin(a);
-                    var offX = midX * cosA - midY * sinA;
-                    var offY = midX * sinA + midY * cosA;
+                    var midX = (textBB.left + textBB.right) / 2;
+                    var midY = (textBB.top + textBB.bottom) / 2;
+                    transform.textX = midX * cosA - midY * sinA;
+                    transform.textY = midX * sinA + midY * cosA;
+                    transform.targetX = translateX;
+                    transform.targetY = translateY;
 
-                    sliceText.attr('transform',
-                        'translate(' +
-                            (translateX - offX) + ',' +
-                            (translateY - offY) +
-                        ')' +
-                        (scale < 1 ? ('scale(' + scale + ')') : '') +
-                        (rotate ? ('rotate(' + rotate + ')') : '')
-                    );
+                    sliceText.attr('transform', Lib.getTextTransform(transform, true));
                 });
             });
 
