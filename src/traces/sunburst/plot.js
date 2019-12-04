@@ -256,7 +256,7 @@ function plotOne(gd, cd, element, transitionOpts) {
 
         // position the text relative to the slice
         var textBB = Drawing.bBox(sliceText.node());
-        pt.transform = transformInsideText(textBB, pt, cd0);
+        pt.transform = transformInsideText(textBB, pt, cd0, fullLayout);
         pt.translateX = transTextX(pt);
         pt.translateY = transTextY(pt);
 

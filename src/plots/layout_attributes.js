@@ -151,7 +151,7 @@ module.exports = {
                 'Sets the minimum text size between traces of the same type.',
                 'Please note that when this parameter is set to',
                 'a value other than zero the text won\'t be rotated',
-                'by default within bars.'
+                'by default e.g. within rectangles or slices.'
             ].join(' ')
         },
         mode: {

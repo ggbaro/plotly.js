@@ -30,6 +30,7 @@ function resizeText(gd, gTrace, traceType) {
         switch(traceType) {
             case 'treemap' :
             case 'funnelarea' :
+            case 'pie' :
                 t = gTrace.selectAll('g.slicetext').selectAll('text');
                 break;
             default :

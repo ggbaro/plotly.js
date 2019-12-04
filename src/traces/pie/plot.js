@@ -16,6 +16,7 @@ var Color = require('../../components/color');
 var Drawing = require('../../components/drawing');
 var Lib = require('../../lib');
 var svgTextUtils = require('../../lib/svg_text_utils');
+var recordMinTextSize = require('../bar/plot').recordMinTextSize;
 
 var helpers = require('./helpers');
 var eventData = require('./event_data');
@@ -52,7 +53,7 @@ function plot(gd, cdModule) {
             ];
             var hasOutsideText = false;
 
-            slices.each(function(pt) {
+            slices.each(function(pt, i) {
                 if(pt.hidden) {
                     d3.select(this).selectAll('path,g').remove();
                     return;
@@ -131,7 +132,7 @@ function plot(gd, cdModule) {
                 formatSliceLabel(gd, pt, cd0);
                 var textPosition = helpers.castOption(trace.textposition, pt.pts);
                 var sliceTextGroup = sliceTop.selectAll('g.slicetext')
-                    .data(pt.text && (textPosition !== 'none') ? [0] : []);
+                    .data(pt.text && (textPosition !== 'none') ? [pt] : []);
 
                 sliceTextGroup.enter().append('g')
                     .classed('slicetext', true);
@@ -144,6 +145,8 @@ function plot(gd, cdModule) {
                         s.attr('data-notex', 1);
                     });
 
+                    var font = gd._fullLayout.font;
+
                     sliceText.text(pt.text)
                         .attr({
                             'class': 'slicetext',
@@ -151,8 +154,8 @@ function plot(gd, cdModule) {
                             'text-anchor': 'middle'
                         })
                         .call(Drawing.font, textPosition === 'outside' ?
-                          determineOutsideTextFont(trace, pt, gd._fullLayout.font) :
-                          determineInsideTextFont(trace, pt, gd._fullLayout.font))
+                          determineOutsideTextFont(trace, pt, font) :
+                          determineInsideTextFont(trace, pt, font))
                         .call(svgTextUtils.convertToTspans, gd);
 
                     // position the text relative to the slice
@@ -162,7 +165,7 @@ function plot(gd, cdModule) {
                     if(textPosition === 'outside') {
                         transform = transformOutsideText(textBB, pt);
                     } else {
-                        transform = transformInsideText(textBB, pt, cd0);
+                        transform = transformInsideText(textBB, pt, cd0, fullLayout);
                         if(textPosition === 'auto' && transform.scale < 1) {
                             sliceText.call(Drawing.font, trace.outsidetextfont);
                             if(trace.outsidetextfont.family !== trace.insidetextfont.family ||
@@ -199,6 +202,10 @@ function plot(gd, cdModule) {
                     transform.textY = midX * sinA + midY * cosA;
                     transform.targetX = translateX;
                     transform.targetY = translateY;
+
+                    transform.fontSize = font.size;
+                    recordMinTextSize(trace.type, transform, fullLayout);
+                    cd[i].transform = transform;
 
                     sliceText.attr('transform', Lib.getTextTransform(transform, true));
                 });
@@ -305,8 +312,10 @@ function plotTextLines(slices, trace) {
         // first move the text to its new location
         var sliceText = sliceTop.select('g.slicetext text');
 
-        sliceText.attr('transform', 'translate(' + pt.labelExtraX + ',' + pt.labelExtraY + ')' +
-            sliceText.attr('transform'));
+        pt.transform.targetX += pt.labelExtraX;
+        pt.transform.targetY += pt.labelExtraY;
+
+        sliceText.attr('transform', Lib.getTextTransform(pt.transform));
 
         // then add a line to the new location
         var lineStartX = pt.cxFinal + pt.pxmid[0];
@@ -554,7 +563,7 @@ function prerenderTitles(cdModule, gd) {
     }
 }
 
-function transformInsideText(textBB, pt, cd0) {
+function transformInsideText(textBB, pt, cd0, fullLayout) {
     var textDiameter = Math.sqrt(textBB.width * textBB.width + textBB.height * textBB.height);
     var textAspect = textBB.width / textBB.height;
     var halfAngle = pt.halfangle;
@@ -574,7 +583,7 @@ function transformInsideText(textBB, pt, cd0) {
         rotate: 0
     };
 
-    if(transform.scale >= 1) return transform;
+    if(transform.scale >= 1 || fullLayout.uniformtext.minsize) return transform;
 
     // max size if text is rotated radially
     var Qr = textAspect + 1 / (2 * Math.tan(halfAngle));
@@ -1031,6 +1040,7 @@ function formatSliceLabel(gd, pt, cd0) {
         }
     }
 }
+
 module.exports = {
     plot: plot,
     formatSliceLabel: formatSliceLabel,
