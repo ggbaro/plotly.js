@@ -11,9 +11,11 @@
 var d3 = require('d3');
 var Color = require('../../components/color');
 var Lib = require('../../lib');
+var resizeText = require('../bar/style').resizeText;
 
 function style(gd) {
     var s = gd._fullLayout._sunburstlayer.selectAll('.trace');
+    resizeText(gd, s, 'sunburst');
 
     s.each(function(cd) {
         var gTrace = d3.select(this);

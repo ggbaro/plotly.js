@@ -28,20 +28,26 @@ function resizeText(gd, gTrace, traceType) {
 
         var t;
         switch(traceType) {
-            case 'treemap' :
             case 'funnelarea' :
             case 'pie' :
+            case 'sunburst' :
+            case 'treemap' :
                 t = gTrace.selectAll('g.slicetext').selectAll('text');
                 break;
             default :
                 t = gTrace.selectAll('g.points').selectAll('g.point').selectAll('text');
         }
 
+        var isCenter = (
+            traceType === 'pie' ||
+            traceType === 'sunburst'
+        );
+
         t.each(function(d) {
             var transform = d.transform;
 
             transform.scale = minSize / transform.fontSize;
-            d3.select(this).attr('transform', Lib.getTextTransform(transform));
+            d3.select(this).attr('transform', Lib.getTextTransform(transform), isCenter);
 
             if(shouldHide && transform.hide) {
                 d3.select(this).text(' ');

@@ -14,6 +14,7 @@ var d3Hierarchy = require('d3-hierarchy');
 var Drawing = require('../../components/drawing');
 var Lib = require('../../lib');
 var svgTextUtils = require('../../lib/svg_text_utils');
+var recordMinTextSize = require('../bar/plot').recordMinTextSize;
 
 var transformInsideText = require('../pie/plot').transformInsideText;
 var styleOne = require('./style').styleOne;
@@ -248,10 +249,12 @@ function plotOne(gd, cd, element, transitionOpts) {
             s.attr('data-notex', 1);
         });
 
+        var font = helpers.determineTextFont(trace, pt, fullLayout.font);
+
         sliceText.text(exports.formatSliceLabel(pt, entry, trace, cd, fullLayout))
             .classed('slicetext', true)
             .attr('text-anchor', 'middle')
-            .call(Drawing.font, helpers.determineTextFont(trace, pt, fullLayout.font))
+            .call(Drawing.font, font)
             .call(svgTextUtils.convertToTspans, gd);
 
         // position the text relative to the slice
@@ -261,13 +264,30 @@ function plotOne(gd, cd, element, transitionOpts) {
         pt.translateY = transTextY(pt);
 
         var strTransform = function(d, textBB) {
-            return 'translate(' + d.translateX + ',' + d.translateY + ')' +
-                (d.transform.scale < 1 ? ('scale(' + d.transform.scale + ')') : '') +
-                (d.transform.rotate ? ('rotate(' + d.transform.rotate + ')') : '') +
-                'translate(' +
-                    (-(textBB.left + textBB.right) / 2) + ',' +
-                    (-(textBB.top + textBB.bottom) / 2) +
-                ')';
+            var translateX = d.translateX;
+            var translateY = d.translateY;
+            var transform = d.transform;
+
+            // same as pie | TODO: make a function in pie and reuse it here
+            var rotate = transform.rotate;
+            var scale = transform.scale;
+            if(scale > 1) scale = 1;
+
+            var a = rotate * Math.PI / 180;
+            var cosA = Math.cos(a);
+            var sinA = Math.sin(a);
+            var midX = (textBB.left + textBB.right) / 2;
+            var midY = (textBB.top + textBB.bottom) / 2;
+            transform.textX = midX * cosA - midY * sinA;
+            transform.textY = midX * sinA + midY * cosA;
+            transform.targetX = translateX;
+            transform.targetY = translateY;
+
+            transform.fontSize = font.size;
+            recordMinTextSize(trace.type, transform, fullLayout);
+            d.transform = transform;
+
+            return Lib.getTextTransform(transform, true);
         };
 
         if(hasTransition) {
