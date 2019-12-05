@@ -1189,7 +1189,8 @@ lib.getTextTransform = function(opts, isCenter) {
     var targetY = opts.targetY;
     var rotate = opts.rotate;
     var scale = opts.scale;
-    if(scale > 1 || !scale) scale = 1;
+    if(!scale) scale = 0;
+    else if(scale > 1) scale = 1;
 
     return (
         'translate(' +

@@ -176,32 +176,20 @@ function plot(gd, cdModule) {
                         }
                     }
 
-                    var translateX = cx + pt.pxmid[0] * transform.rCenter + (transform.x || 0);
-                    var translateY = cy + pt.pxmid[1] * transform.rCenter + (transform.y || 0);
+                    transform.targetX = cx + pt.pxmid[0] * transform.rCenter + (transform.x || 0);
+                    transform.targetY = cy + pt.pxmid[1] * transform.rCenter + (transform.y || 0);
+                    computeTransform(transform, textBB);
 
                     // save some stuff to use later ensure no labels overlap
                     if(transform.outside) {
-                        pt.yLabelMin = translateY - textBB.height / 2;
-                        pt.yLabelMid = translateY;
-                        pt.yLabelMax = translateY + textBB.height / 2;
+                        var targetY = transform.targetY;
+                        pt.yLabelMin = targetY - textBB.height / 2;
+                        pt.yLabelMid = targetY;
+                        pt.yLabelMax = targetY + textBB.height / 2;
                         pt.labelExtraX = 0;
                         pt.labelExtraY = 0;
                         hasOutsideText = true;
                     }
-
-                    var rotate = transform.rotate;
-                    var scale = transform.scale;
-                    if(scale > 1) scale = 1;
-
-                    var a = rotate * Math.PI / 180;
-                    var cosA = Math.cos(a);
-                    var sinA = Math.sin(a);
-                    var midX = (textBB.left + textBB.right) / 2;
-                    var midY = (textBB.top + textBB.bottom) / 2;
-                    transform.textX = midX * cosA - midY * sinA;
-                    transform.textY = midX * sinA + midY * cosA;
-                    transform.targetX = translateX;
-                    transform.targetY = translateY;
 
                     transform.fontSize = font.size;
                     recordMinTextSize(trace.type, transform, fullLayout);
@@ -1041,6 +1029,23 @@ function formatSliceLabel(gd, pt, cd0) {
     }
 }
 
+function computeTransform(
+    transform,  // inout
+    textBB      // in
+) {
+    var rotate = transform.rotate;
+    var scale = transform.scale;
+    if(scale > 1) scale = 1;
+
+    var a = rotate * Math.PI / 180;
+    var cosA = Math.cos(a);
+    var sinA = Math.sin(a);
+    var midX = (textBB.left + textBB.right) / 2;
+    var midY = (textBB.top + textBB.bottom) / 2;
+    transform.textX = midX * cosA - midY * sinA;
+    transform.textY = midX * sinA + midY * cosA;
+}
+
 module.exports = {
     plot: plot,
     formatSliceLabel: formatSliceLabel,
@@ -1050,4 +1055,5 @@ module.exports = {
     prerenderTitles: prerenderTitles,
     layoutAreas: layoutAreas,
     attachFxHandlers: attachFxHandlers,
+    computeTransform: computeTransform
 };

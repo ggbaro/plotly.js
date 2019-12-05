@@ -15,8 +15,9 @@ var Drawing = require('../../components/drawing');
 var Lib = require('../../lib');
 var svgTextUtils = require('../../lib/svg_text_utils');
 var recordMinTextSize = require('../bar/plot').recordMinTextSize;
-
-var transformInsideText = require('../pie/plot').transformInsideText;
+var piePlot = require('../pie/plot');
+var computeTransform = piePlot.computeTransform;
+var transformInsideText = piePlot.transformInsideText;
 var styleOne = require('./style').styleOne;
 
 var attachFxHandlers = require('./fx');
@@ -264,28 +265,13 @@ function plotOne(gd, cd, element, transitionOpts) {
         pt.translateY = transTextY(pt);
 
         var strTransform = function(d, textBB) {
-            var translateX = d.translateX;
-            var translateY = d.translateY;
             var transform = d.transform;
-
-            // same as pie | TODO: make a function in pie and reuse it here
-            var rotate = transform.rotate;
-            var scale = transform.scale;
-            if(scale > 1) scale = 1;
-
-            var a = rotate * Math.PI / 180;
-            var cosA = Math.cos(a);
-            var sinA = Math.sin(a);
-            var midX = (textBB.left + textBB.right) / 2;
-            var midY = (textBB.top + textBB.bottom) / 2;
-            transform.textX = midX * cosA - midY * sinA;
-            transform.textY = midX * sinA + midY * cosA;
-            transform.targetX = translateX;
-            transform.targetY = translateY;
+            transform.targetX = d.translateX;
+            transform.targetY = d.translateY;
+            computeTransform(transform, textBB);
 
             transform.fontSize = font.size;
             recordMinTextSize(trace.type, transform, fullLayout);
-            d.transform = transform;
 
             return Lib.getTextTransform(transform, true);
         };
