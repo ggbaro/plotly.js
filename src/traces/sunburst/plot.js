@@ -150,8 +150,8 @@ function plotOne(gd, cd, element, transitionOpts) {
     // slice path generation fn
     var pathSlice = function(d) { return Lib.pathAnnulus(d.rpx0, d.rpx1, d.x0, d.x1, cx, cy); };
     // slice text translate x/y
-    var transTextX = function(d) { return cx + d.pxmid[0] * d.transform.rCenter + (d.transform.x || 0); };
-    var transTextY = function(d) { return cy + d.pxmid[1] * d.transform.rCenter + (d.transform.y || 0); };
+    var getTargetX = function(d) { return cx + d.pxmid[0] * d.transform.rCenter + (d.transform.x || 0); };
+    var getTargetY = function(d) { return cy + d.pxmid[1] * d.transform.rCenter + (d.transform.y || 0); };
 
     slices = slices.data(sliceData, helpers.getPtId);
 
@@ -261,13 +261,11 @@ function plotOne(gd, cd, element, transitionOpts) {
         // position the text relative to the slice
         var textBB = Drawing.bBox(sliceText.node());
         pt.transform = transformInsideText(textBB, pt, cd0, fullLayout);
-        pt.translateX = transTextX(pt);
-        pt.translateY = transTextY(pt);
+        pt.transform.targetX = getTargetX(pt);
+        pt.transform.targetY = getTargetY(pt);
 
         var strTransform = function(d, textBB) {
             var transform = d.transform;
-            transform.targetX = d.translateX;
-            transform.targetY = d.translateY;
             computeTransform(transform, textBB);
 
             transform.fontSize = font.size;
@@ -437,18 +435,16 @@ function plotOne(gd, cd, element, transitionOpts) {
                 }
             };
 
-            var out = {
+            return {
                 rpx1: rpx1Fn(t),
-                translateX: transTextX(d),
-                translateY: transTextY(d),
                 transform: {
+                    targetX: getTargetX(d),
+                    targetY: getTargetY(d),
                     scale: scaleFn(t),
                     rotate: rotateFn(t),
                     rCenter: rCenter
                 }
             };
-
-            return out;
         };
     }
 
