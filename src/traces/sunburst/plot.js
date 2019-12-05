@@ -435,6 +435,7 @@ function plotOne(gd, cd, element, transitionOpts) {
                 }
             };
 
+            recordMinTextSize(trace.type, transform, fullLayout);
             return {
                 rpx1: rpx1Fn(t),
                 transform: {
