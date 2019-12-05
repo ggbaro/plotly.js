@@ -375,7 +375,7 @@ function appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, opts, makeOnCom
         }
     }
 
-    var angle = fullLayout.uniformtext.minsize ? 0 : trace.textangle;
+    var angle = fullLayout.uniformtext.mode ? 0 : trace.textangle;
 
     // compute text transform
     var transform, constrained;
@@ -415,15 +415,16 @@ function recordMinTextSize(
     transform, // inout
     fullLayout // inout
 ) {
-    if(fullLayout.uniformtext.minsize) {
-        var minS = '_' + traceType + 'Text_minsize';
+    if(fullLayout.uniformtext.mode) {
+        var minKey = '_' + traceType + 'Text_minsize';
+        var minSize = fullLayout.uniformtext.minsize;
         var size = transform.scale * transform.fontSize;
 
-        transform.hide = size < fullLayout.uniformtext.minsize;
+        transform.hide = size < minSize;
 
-        fullLayout[minS] = Math.min(
-            fullLayout[minS] || Infinity,
-            Math.max(size, fullLayout.uniformtext.minsize)
+        fullLayout[minKey] = Math.min(
+            fullLayout[minKey] || Infinity,
+            Math.max(size, minSize)
         );
     }
 }

@@ -141,6 +141,24 @@ module.exports = {
         editType: 'layoutstyle'
     },
     uniformtext: {
+        mode: {
+            valType: 'enumerated',
+            values: [false, 'hide', 'show'],
+            dflt: false,
+            role: 'info',
+            editType: 'plot',
+            description: [
+                'Determines how the font size for various text',
+                'elements are uniformed between each trace type.',
+                'If the computed text sizes were smaller than',
+                'the minimum size defined by `minsize`',
+                'using *hide* option hides the text; and',
+                'using *show* option shows the text without further downscaling.',
+                'Please note that when this parameter is set to',
+                'a value other than *false* the text within rectangles or slices',
+                'won\'t be rotated by default.'
+            ].join(' ')
+        },
         minsize: {
             valType: 'number',
             min: 0,
@@ -148,21 +166,7 @@ module.exports = {
             role: 'info',
             editType: 'plot',
             description: [
-                'Sets the minimum text size between traces of the same type.',
-                'Please note that when this parameter is set to',
-                'a value other than zero the text won\'t be rotated',
-                'by default e.g. within rectangles or slices.'
-            ].join(' ')
-        },
-        mode: {
-            valType: 'enumerated',
-            values: ['hide', 'show'],
-            dflt: 'hide',
-            role: 'info',
-            editType: 'plot',
-            description: [
-                'Determines how text element within the is displayed',
-                'if it is smaller than the minimum scale defined `minsize`.'
+                'Sets the minimum text size between traces of the same type.'
             ].join(' ')
         },
         editType: 'plot'
