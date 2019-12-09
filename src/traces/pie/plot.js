@@ -553,8 +553,8 @@ function prerenderTitles(cdModule, gd) {
 
 function transformInsideText(textBB, pt, cd0, fullLayout) {
     var textDiameter = Math.sqrt(textBB.width * textBB.width + textBB.height * textBB.height);
-    var textAspect = textBB.width / textBB.height;
     var halfAngle = pt.halfangle;
+    var midAngle = pt.midangle;
     var ring = pt.ring;
     var rInscribed = pt.rInscribed;
     var r = cd0.r || pt.rpx1;
@@ -571,41 +571,61 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
         rotate: 0
     };
 
-    if(transform.scale >= 1 || fullLayout.uniformtext.minsize) return transform;
+    if(transform.scale >= 1) return transform;
 
-    // max size if text is rotated radially
-    var Qr = textAspect + 1 / (2 * Math.tan(halfAngle));
-    var maxHalfHeightRotRadial = r * Math.min(
-        1 / (Math.sqrt(Qr * Qr + 0.5) + Qr),
-        ring / (Math.sqrt(textAspect * textAspect + ring / 2) + textAspect)
-    );
-    var radialTransform = {
-        scale: maxHalfHeightRotRadial * 2 / textBB.height,
-        rCenter: Math.cos(maxHalfHeightRotRadial / r) -
-            maxHalfHeightRotRadial * textAspect / r,
-        rotate: (180 / Math.PI * pt.midangle + 720) % 180 - 90
-    };
+    var rad = calcRadTransform(textBB, r, ring, halfAngle, midAngle);
+    var tan = calcTanTransform(textBB, r, ring, halfAngle, midAngle);
 
-    // max size if text is rotated tangentially
-    var aspectInv = 1 / textAspect;
-    var Qt = aspectInv + 1 / (2 * Math.tan(halfAngle));
-    var maxHalfWidthTangential = r * Math.min(
-        1 / (Math.sqrt(Qt * Qt + 0.5) + Qt),
-        ring / (Math.sqrt(aspectInv * aspectInv + ring / 2) + aspectInv)
-    );
-    var tangentialTransform = {
-        scale: maxHalfWidthTangential * 2 / textBB.width,
-        rCenter: Math.cos(maxHalfWidthTangential / r) -
-            maxHalfWidthTangential / textAspect / r,
-        rotate: (180 / Math.PI * pt.midangle + 810) % 180 - 90
-    };
     // if we need a rotated transform, pick the biggest one
     // even if both are bigger than 1
-    var rotatedTransform = tangentialTransform.scale > radialTransform.scale ?
-            tangentialTransform : radialTransform;
+    var rotatedTransform = tan.scale > rad.scale ? tan : rad;
+
+    if(fullLayout.uniformtext.mode) {
+        // max size if text is placed (horizontally) at the top or bottom of the arc
+
+
+    }
 
     if(transform.scale < 1 && rotatedTransform.scale > transform.scale) return rotatedTransform;
     return transform;
+}
+
+function calcRadTransform(textBB, r, ring, halfAngle, midAngle) {
+    // max size if text is rotated radially
+    var a = textBB.width / textBB.height;
+    var s = calcMaxHalfSize(a, halfAngle, r, ring);
+    return {
+        scale: s * 2 / textBB.height,
+        rCenter: calcRCenter(a, s / r),
+        rotate: calcRotate(midAngle)
+    };
+}
+
+function calcTanTransform(textBB, r, ring, halfAngle, midAngle) {
+    // max size if text is rotated tangentially
+    var a = textBB.height / textBB.width;
+    var s = calcMaxHalfSize(a, halfAngle, r, ring);
+    return {
+        scale: s * 2 / textBB.width,
+        rCenter: calcRCenter(a, s / r),
+        rotate: calcRotate(midAngle + Math.PI / 2)
+    };
+}
+
+function calcRCenter(a, b) {
+    return Math.cos(b) - a * b;
+}
+
+function calcRotate(t) {
+    return (180 / Math.PI * t + 720) % 180 - 90;
+}
+
+function calcMaxHalfSize(a, halfAngle, r, ring) {
+    var q = a + 1 / (2 * Math.tan(halfAngle));
+    return r * Math.min(
+        1 / (Math.sqrt(q * q + 0.5) + q),
+        ring / (Math.sqrt(a * a + ring / 2) + a)
+    );
 }
 
 function getInscribedRadiusFraction(pt, cd0) {
