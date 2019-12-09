@@ -573,12 +573,11 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
 
     if(transform.scale >= 1) return transform;
 
-    var rad = calcRadTransform(textBB, r, ring, halfAngle, midAngle);
-    var tan = calcTanTransform(textBB, r, ring, halfAngle, midAngle);
-
-    // if we need a rotated transform, pick the biggest one
-    // even if both are bigger than 1
-    var rotatedTransform = tan.scale > rad.scale ? tan : rad;
+    var allTransforms = [
+        transform,
+        calcRadTransform(textBB, r, ring, halfAngle, midAngle),
+        calcTanTransform(textBB, r, ring, halfAngle, midAngle)
+    ];
 
     if(fullLayout.uniformtext.mode) {
         // max size if text is placed (horizontally) at the top or bottom of the arc
@@ -586,8 +585,9 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
 
     }
 
-    if(transform.scale < 1 && rotatedTransform.scale > transform.scale) return rotatedTransform;
-    return transform;
+    return allTransforms.sort(function(a, b) {
+        return b.scale - a.scale;
+    })[0];
 }
 
 function calcRadTransform(textBB, r, ring, halfAngle, midAngle) {
