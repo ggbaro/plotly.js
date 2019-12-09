@@ -176,8 +176,9 @@ function plot(gd, cdModule) {
                         }
                     }
 
-                    transform.targetX = cx + pt.pxmid[0] * transform.rCenter + (transform.x || 0);
-                    transform.targetY = cy + pt.pxmid[1] * transform.rCenter + (transform.y || 0);
+                    var pxtxt = pt.pxtxt || pt.pxmid;
+                    transform.targetX = cx + pxtxt[0] * transform.rCenter + (transform.x || 0);
+                    transform.targetY = cy + pxtxt[1] * transform.rCenter + (transform.y || 0);
                     computeTransform(transform, textBB);
 
                     // save some stuff to use later ensure no labels overlap
@@ -573,21 +574,57 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
 
     if(transform.scale >= 1) return transform;
 
-    var allTransforms = [
-        transform,
-        calcRadTransform(textBB, r, ring, halfAngle, midAngle),
-        calcTanTransform(textBB, r, ring, halfAngle, midAngle)
-    ];
+    var allTransforms = [transform];
 
     if(fullLayout.uniformtext.mode) {
         // max size if text is placed (horizontally) at the top or bottom of the arc
 
+        var considerCrossing = function(angle, key) {
+            if(isCrossing(pt, angle)) {
+                var dStart = Math.abs(angle - pt.startangle);
+                var dStop = Math.abs(angle - pt.stopangle);
 
+                var closestEdge = dStart < dStop ? dStart : dStop;
+
+                var newT;
+                if(key === 'tan') {
+                    newT = calcTanTransform(textBB, r, ring, closestEdge, 0);
+                } else { // case of 'rad'
+                    newT = calcRadTransform(textBB, r, ring, closestEdge, Math.PI / 2);
+                }
+                newT._repos = getCoords(r, angle);
+
+                allTransforms.push(newT);
+            }
+        };
+
+        for(var i = 3; i >= -3; i--) { // to cover all cases with trace.rotation added
+            considerCrossing(Math.PI * (i + 0.0), 'tan');
+            considerCrossing(Math.PI * (i + 0.5), 'rad');
+        }
+    } else {
+        allTransforms.push(calcRadTransform(textBB, r, ring, halfAngle, midAngle));
+        allTransforms.push(calcTanTransform(textBB, r, ring, halfAngle, midAngle));
     }
 
-    return allTransforms.sort(function(a, b) {
+    var maxScaleTransform = allTransforms.sort(function(a, b) {
         return b.scale - a.scale;
     })[0];
+
+    if(maxScaleTransform._repos) {
+        pt.pxtxt = maxScaleTransform._repos;
+    }
+
+    return maxScaleTransform;
+}
+
+function isCrossing(pt, angle) {
+    var start = pt.startangle;
+    var stop = pt.stopangle;
+    return (
+        (start > angle && angle > stop) ||
+        (start < angle && angle < stop)
+    );
 }
 
 function calcRadTransform(textBB, r, ring, halfAngle, midAngle) {
@@ -945,6 +982,7 @@ function groupScale(cdModule, scaleGroups) {
 
 function setCoords(cd) {
     var cd0 = cd[0];
+    var r = cd0.r;
     var trace = cd0.trace;
     var currentAngle = trace.rotation * Math.PI / 180;
     var angleFactor = 2 * Math.PI / cd0.vTotal;
@@ -965,11 +1003,7 @@ function setCoords(cd) {
         lastPt = 'px0';
     }
 
-    function getCoords(angle) {
-        return [cd0.r * Math.sin(angle), -cd0.r * Math.cos(angle)];
-    }
-
-    currentCoords = getCoords(currentAngle);
+    currentCoords = getCoords(r, currentAngle);
 
     for(i = 0; i < cd.length; i++) {
         cdi = cd[i];
@@ -977,12 +1011,13 @@ function setCoords(cd) {
 
         cdi[firstPt] = currentCoords;
 
+        cdi.startangle = currentAngle;
         currentAngle += angleFactor * cdi.v / 2;
-        cdi.pxmid = getCoords(currentAngle);
+        cdi.pxmid = getCoords(r, currentAngle);
         cdi.midangle = currentAngle;
-
         currentAngle += angleFactor * cdi.v / 2;
-        currentCoords = getCoords(currentAngle);
+        currentCoords = getCoords(r, currentAngle);
+        cdi.stopangle = currentAngle;
 
         cdi[lastPt] = currentCoords;
 
@@ -992,6 +1027,10 @@ function setCoords(cd) {
         cdi.ring = 1 - trace.hole;
         cdi.rInscribed = getInscribedRadiusFraction(cdi, cd0);
     }
+}
+
+function getCoords(r, angle) {
+    return [r * Math.sin(angle), -r * Math.cos(angle)];
 }
 
 function formatSliceLabel(gd, pt, cd0) {

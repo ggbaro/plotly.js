@@ -150,8 +150,9 @@ function plotOne(gd, cd, element, transitionOpts) {
     // slice path generation fn
     var pathSlice = function(d) { return Lib.pathAnnulus(d.rpx0, d.rpx1, d.x0, d.x1, cx, cy); };
     // slice text translate x/y
-    var getTargetX = function(d) { return cx + d.pxmid[0] * d.transform.rCenter + (d.transform.x || 0); };
-    var getTargetY = function(d) { return cy + d.pxmid[1] * d.transform.rCenter + (d.transform.y || 0); };
+
+    var getTargetX = function(d) { return cx + (d.pxtxt || d.pxmid)[0] * d.transform.rCenter + (d.transform.x || 0); };
+    var getTargetY = function(d) { return cy + (d.pxtxt || d.pxmid)[1] * d.transform.rCenter + (d.transform.y || 0); };
 
     slices = slices.data(sliceData, helpers.getPtId);
 
@@ -216,6 +217,8 @@ function plotOne(gd, cd, element, transitionOpts) {
         pt.xmid = (pt.x0 + pt.x1) / 2;
         pt.pxmid = rx2px(pt.rpx1, pt.xmid);
         pt.midangle = -(pt.xmid - Math.PI / 2);
+        pt.startangle = -(pt.x0 - Math.PI / 2);
+        pt.stopangle = -(pt.x1 - Math.PI / 2);
         pt.halfangle = 0.5 * Math.min(Lib.angleDelta(pt.x0, pt.x1) || Math.PI, Math.PI);
         pt.ring = 1 - (pt.rpx0 / pt.rpx1);
         pt.rInscribed = getInscribedRadiusFraction(pt, trace);
