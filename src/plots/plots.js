@@ -1473,7 +1473,10 @@ plots.supplyLayoutGlobalDefaults = function(layoutIn, layoutOut, formatObj) {
     coerce('title.pad.l');
 
     var uniformtextMode = coerce('uniformtext.mode');
-    if(uniformtextMode) coerce('uniformtext.minsize');
+    if(uniformtextMode) {
+        coerce('uniformtext.minsize');
+        coerce('uniformtext.orientation');
+    }
 
     // Make sure that autosize is defaulted to *true*
     // on layouts with no set width and height for backward compatibly,

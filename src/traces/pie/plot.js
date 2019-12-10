@@ -145,7 +145,11 @@ function plot(gd, cdModule) {
                         s.attr('data-notex', 1);
                     });
 
-                    var font = gd._fullLayout.font;
+                    var font = Lib.extendFlat({}, textPosition === 'outside' ?
+                        determineOutsideTextFont(trace, pt, fullLayout.font) :
+                        determineInsideTextFont(trace, pt, fullLayout.font), {}
+                    );
+                    font.size = Math.max(font.size, fullLayout.uniformtext.minsize || 0);
 
                     sliceText.text(pt.text)
                         .attr({
@@ -153,9 +157,7 @@ function plot(gd, cdModule) {
                             transform: '',
                             'text-anchor': 'middle'
                         })
-                        .call(Drawing.font, textPosition === 'outside' ?
-                          determineOutsideTextFont(trace, pt, font) :
-                          determineInsideTextFont(trace, pt, font))
+                        .call(Drawing.font, font)
                         .call(svgTextUtils.convertToTspans, gd);
 
                     // position the text relative to the slice
@@ -167,9 +169,12 @@ function plot(gd, cdModule) {
                     } else {
                         transform = transformInsideText(textBB, pt, cd0, fullLayout);
                         if(textPosition === 'auto' && transform.scale < 1) {
+                            var font2 = Lib.extendFlat({}, trace.outsidetextfont, {});
+                            font2.size = Math.max(font2.size, fullLayout.uniformtext.minsize || 0);
+
                             sliceText.call(Drawing.font, trace.outsidetextfont);
-                            if(trace.outsidetextfont.family !== trace.insidetextfont.family ||
-                                    trace.outsidetextfont.size !== trace.insidetextfont.size) {
+                            if(font2.family !== font.family || font2.size !== font.size) {
+                                // recompute bounding box
                                 textBB = Drawing.bBox(sliceText.node());
                             }
                             transform = transformOutsideText(textBB, pt);
@@ -576,7 +581,7 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
 
     var allTransforms = [transform];
 
-    if(fullLayout.uniformtext.mode) {
+    if(fullLayout.uniformtext.mode && fullLayout.uniformtext.orientation === 'h') {
         // max size if text is placed (horizontally) at the top or bottom of the arc
 
         var considerCrossing = function(angle, key) {

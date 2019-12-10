@@ -47,7 +47,7 @@ function resizeText(gd, gTrace, traceType) {
             var transform = d.transform;
 
             transform.scale = minSize / transform.fontSize;
-            d3.select(this).attr('transform', Lib.getTextTransform(transform), isCenter);
+            d3.select(this).attr('transform', Lib.getTextTransform(transform, isCenter));
 
             if(shouldHide && transform.hide) {
                 d3.select(this).text(' ');
@@ -95,7 +95,9 @@ function stylePoints(sel, trace, gd) {
 function styleTextPoints(sel, trace, gd) {
     sel.selectAll('text').each(function(d) {
         var tx = d3.select(this);
-        var font = determineFont(tx, d, trace, gd);
+        var font = Lib.extendFlat({}, determineFont(tx, d, trace, gd), {});
+        font.size = Math.max(font.size, gd._fullLayout.uniformtext.minsize || 0);
+
         Drawing.font(tx, font);
     });
 }
@@ -123,6 +125,7 @@ function styleTextInSelectionMode(txs, trace, gd) {
 
         if(d.selected) {
             font = Lib.extendFlat({}, determineFont(tx, d, trace, gd));
+            font.size = Math.max(font.size, gd._fullLayout.uniformtext.minsize || 0);
 
             var selectedFontColor = trace.selected.textfont && trace.selected.textfont.color;
             if(selectedFontColor) {

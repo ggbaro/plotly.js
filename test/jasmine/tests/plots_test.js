@@ -13,10 +13,11 @@ describe('Test Plots', function() {
     'use strict';
 
     describe('Plots.supplyDefaults', function() {
-        it('should not coerce `uniformtext.minsize` when `uniformtext.mode` is *false*', function() {
+        it('should not coerce `minsize` and `orientation` when `uniformtext.mode` is *false*', function() {
             var gd = {};
             supplyAllDefaults(gd);
             expect(gd._fullLayout.uniformtext.minsize).toBe(undefined);
+            expect(gd._fullLayout.uniformtext.orientation).toBe(undefined);
         });
 
         it('should not accept ranges where the end is not greater than the start', function() {

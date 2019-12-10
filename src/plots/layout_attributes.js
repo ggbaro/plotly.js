@@ -154,9 +154,8 @@ module.exports = {
                 'the minimum size defined by `minsize`',
                 'using *hide* option hides the text; and',
                 'using *show* option shows the text without further downscaling.',
-                'Please note that when this parameter is set to',
-                'a value other than *false* the text within rectangles or slices',
-                'won\'t be rotated by default.'
+                'Please note that if the size defined by `minsize` is greater than',
+                'the font size defined by trace, the `minsize` would be used.'
             ].join(' ')
         },
         minsize: {
@@ -167,6 +166,19 @@ module.exports = {
             editType: 'plot',
             description: [
                 'Sets the minimum text size between traces of the same type.'
+            ].join(' ')
+        },
+        orientation: {
+            valType: 'enumerated',
+            values: ['h', 'auto'],
+            dflt: 'h',
+            role: 'info',
+            editType: 'plot',
+            description: [
+                'Determines how text elements should be oriented',
+                'within pie slices or bar rectangles.',
+                'Using *h* option forces all the text to stay horizontal; and',
+                'using *auto* option keeps orientations as defined by trace.'
             ].join(' ')
         },
         editType: 'plot'

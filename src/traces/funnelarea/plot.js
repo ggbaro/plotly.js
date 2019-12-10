@@ -96,7 +96,8 @@ module.exports = function plot(gd, cdModule) {
                         s.attr('data-notex', 1);
                     });
 
-                    var font = gd._fullLayout.font;
+                    var font = Lib.extendFlat({}, determineInsideTextFont(trace, pt, fullLayout.font), {});
+                    font.size = Math.max(font.size, fullLayout.uniformtext.minsize || 0);
 
                     sliceText.text(pt.text)
                         .attr({
@@ -104,7 +105,7 @@ module.exports = function plot(gd, cdModule) {
                             transform: '',
                             'text-anchor': 'middle'
                         })
-                        .call(Drawing.font, determineInsideTextFont(trace, pt, font))
+                        .call(Drawing.font, font)
                         .call(svgTextUtils.convertToTspans, gd);
 
                     // position the text relative to the slice

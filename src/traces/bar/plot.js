@@ -328,7 +328,10 @@ function appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, opts, makeOnCom
         if(isOutmostBar) {
             // draw text using insideTextFont and check if it fits inside bar
             textPosition = 'inside';
-            font = insideTextFont;
+
+            font = Lib.extendFlat({}, insideTextFont, {});
+            font.size = Math.max(font.size, fullLayout.uniformtext.minsize || 0);
+
             textSelection = appendTextNode(bar, text, font);
 
             textBB = Drawing.bBox(textSelection.node()),
@@ -359,7 +362,9 @@ function appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, opts, makeOnCom
     }
 
     if(!textSelection) {
-        font = (textPosition === 'outside') ? outsideTextFont : insideTextFont;
+        font = Lib.extendFlat({}, (textPosition === 'outside') ? outsideTextFont : insideTextFont, {});
+        font.size = Math.max(font.size, fullLayout.uniformtext.minsize || 0);
+
         textSelection = appendTextNode(bar, text, font);
 
         var currentTransform = textSelection.attr('transform');
@@ -375,7 +380,10 @@ function appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, opts, makeOnCom
         }
     }
 
-    var angle = fullLayout.uniformtext.mode ? 0 : trace.textangle;
+    var angle = (
+        fullLayout.uniformtext.mode &&
+        fullLayout.uniformtext.orientation === 'h'
+    ) ? 0 : trace.textangle;
 
     // compute text transform
     var transform, constrained;
@@ -422,10 +430,13 @@ function recordMinTextSize(
 
         transform.hide = size < minSize;
 
-        fullLayout[minKey] = Math.min(
-            fullLayout[minKey] || Infinity,
-            Math.max(size, minSize)
-        );
+        fullLayout[minKey] = fullLayout[minKey] || Infinity;
+        if(!transform.hide) {
+            fullLayout[minKey] = Math.min(
+                fullLayout[minKey],
+                Math.max(size, minSize)
+            );
+        }
     }
 }
 

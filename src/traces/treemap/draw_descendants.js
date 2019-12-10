@@ -182,7 +182,8 @@ module.exports = function drawDescendants(gd, cd, entry, slices, opts) {
             s.attr('data-notex', 1);
         });
 
-        var font = helpers.determineTextFont(trace, pt, fullLayout.font);
+        var font = Lib.extendFlat({}, helpers.determineTextFont(trace, pt, fullLayout.font), {});
+        font.size = Math.max(font.size, fullLayout.uniformtext.minsize || 0);
 
         sliceText.text(pt._text || ' ') // use one space character instead of a blank string to avoid jumps during transition
             .classed('slicetext', true)
