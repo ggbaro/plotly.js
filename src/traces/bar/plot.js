@@ -381,7 +381,6 @@ function appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, opts, makeOnCom
     }
 
     var angle = (
-        fullLayout.uniformtext.mode &&
         fullLayout.uniformtext.orientation === 'h'
     ) ? 0 : trace.textangle;
 

@@ -170,15 +170,16 @@ module.exports = {
         },
         orientation: {
             valType: 'enumerated',
-            values: ['h', 'auto'],
-            dflt: 'h',
+            values: ['h', 'r', 't', 'auto'],
+            dflt: 'auto',
             role: 'info',
             editType: 'plot',
             description: [
-                'Determines how text elements should be oriented',
-                'within pie slices or bar rectangles.',
-                'Using *h* option forces all the text to stay horizontal; and',
-                'using *auto* option keeps orientations as defined by trace.'
+                'Determines the orientation of text inside slices and bars.',
+                'Using *auto* option keeps orientations as defined by trace.',
+                'Using *h* option forces text to be horizontal.',
+                'Using *r* option forces text to be radial.',
+                'Using *t* option forces text to be tangential.'
             ].join(' ')
         },
         editType: 'plot'

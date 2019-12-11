@@ -564,24 +564,43 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
     var ring = pt.ring;
     var rInscribed = pt.rInscribed;
     var r = cd0.r || pt.rpx1;
+    var orientation = cd0.trace.insidetextorientation;
+    var uniformtext = fullLayout.uniformtext;
+    var allTransforms = [];
 
-    // max size text can be inserted inside without rotating it
-    // this inscribes the text rectangle in a circle, which is then inscribed
-    // in the slice, so it will be an underestimate, which some day we may want
-    // to improve so this case can get more use
-    var transform = {
-        scale: rInscribed * r * 2 / textDiameter,
+    var isCircle = (ring === 1) && (Math.abs(pt.startangle - pt.stopangle) === Math.PI * 2);
 
-        // and the center position and rotation in this case
-        rCenter: 1 - rInscribed,
-        rotate: 0
-    };
+    if(
+        isCircle ||
+        (!uniformtext.mode && (
+            orientation === 'auto' ||
+            orientation === 'h'
+        )) || (
+            uniformtext.orientation === 'h' ||
+            uniformtext.orientation === 'auto'
+        )
+    ) {
+        // max size text can be inserted inside without rotating it
+        // this inscribes the text rectangle in a circle, which is then inscribed
+        // in the slice, so it will be an underestimate, which some day we may want
+        // to improve so this case can get more use
+        var transform = {
+            scale: rInscribed * r * 2 / textDiameter,
 
-    if(transform.scale >= 1) return transform;
+            // and the center position and rotation in this case
+            rCenter: 1 - rInscribed,
+            rotate: 0
+        };
 
-    var allTransforms = [transform];
+        if(transform.scale >= 1) return transform;
 
-    if(fullLayout.uniformtext.mode && fullLayout.uniformtext.orientation === 'h') {
+        allTransforms.push(transform);
+    }
+
+    if(
+        (!uniformtext.mode && orientation === 'h') ||
+        uniformtext.orientation === 'h'
+    ) {
         // max size if text is placed (horizontally) at the top or bottom of the arc
 
         var considerCrossing = function(angle, key) {
@@ -607,8 +626,29 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
             considerCrossing(Math.PI * (i + 0.0), 'tan');
             considerCrossing(Math.PI * (i + 0.5), 'rad');
         }
-    } else {
+    }
+
+    if(
+        (!uniformtext.mode && (
+            orientation === 'auto' ||
+            orientation === 'r'
+        )) || (
+            uniformtext.orientation === 'r' ||
+            uniformtext.orientation === 'auto'
+        )
+    ) {
         allTransforms.push(calcRadTransform(textBB, r, ring, halfAngle, midAngle));
+    }
+
+    if(
+        (!uniformtext.mode && (
+            orientation === 'auto' ||
+            orientation === 't'
+        )) || (
+            uniformtext.orientation === 't' ||
+            uniformtext.orientation === 'auto'
+        )
+    ) {
         allTransforms.push(calcTanTransform(textBB, r, ring, halfAngle, midAngle));
     }
 
