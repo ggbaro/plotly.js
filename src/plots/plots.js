@@ -1475,7 +1475,6 @@ plots.supplyLayoutGlobalDefaults = function(layoutIn, layoutOut, formatObj) {
     var uniformtextMode = coerce('uniformtext.mode');
     if(uniformtextMode) {
         coerce('uniformtext.minsize');
-        coerce('uniformtext.orientation');
     }
 
     // Make sure that autosize is defaulted to *true*

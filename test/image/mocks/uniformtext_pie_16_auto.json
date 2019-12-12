@@ -186,8 +186,7 @@
         },
         "uniformtext": {
             "mode": "hide",
-            "minsize": 16,
-            "orientation": "auto"
+            "minsize": 16
         }
     }
 }

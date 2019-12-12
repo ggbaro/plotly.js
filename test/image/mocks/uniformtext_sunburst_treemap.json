@@ -2,6 +2,7 @@
 	"data": [
 		{
             "type": "sunburst",
+            "insidetextorientation": "h",
             "domain": {
                 "y": [0.5, 1]
             },
@@ -159,8 +160,7 @@
         },
         "uniformtext": {
             "mode": "hide",
-            "minsize": 8,
-            "orientation": "h"
+            "minsize": 8
         }
 	}
 }

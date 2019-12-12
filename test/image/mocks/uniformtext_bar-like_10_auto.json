@@ -146,8 +146,7 @@
         },
         "uniformtext": {
             "mode": "hide",
-            "minsize": 10,
-            "orientation": "auto"
+            "minsize": 10
         },
         "barmode": "stack",
         "xaxis": {

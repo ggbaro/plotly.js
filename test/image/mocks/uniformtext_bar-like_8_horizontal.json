@@ -12,6 +12,7 @@
                 "invisible"
             ],
             "type": "bar",
+            "textangle": 0,
             "textinfo": "text",
             "textposition": "auto",
             "xaxis": "x1",
@@ -29,6 +30,7 @@
                 "visible"
             ],
             "type": "bar",
+            "textangle": 0,
             "textinfo": "text",
             "textposition": "auto",
             "xaxis": "x1",
@@ -46,6 +48,7 @@
                 "invisible"
             ],
             "type": "bar",
+            "textangle": 0,
             "textinfo": "text",
             "textposition": "inside",
             "xaxis": "x2",
@@ -63,6 +66,7 @@
                 "invisible"
             ],
             "type": "bar",
+            "textangle": 0,
             "textinfo": "text",
             "textposition": "inside",
             "xaxis": "x2",
@@ -80,6 +84,7 @@
                 "invisible"
             ],
             "type": "funnel",
+            "textangle": 0,
             "textinfo": "text",
             "textposition": "inside",
             "xaxis": "x3",
@@ -97,6 +102,7 @@
                 "invisible"
             ],
             "type": "funnel",
+            "textangle": 0,
             "textinfo": "text",
             "textposition": "inside",
             "xaxis": "x3",
@@ -122,6 +128,7 @@
                 "very <br>L<br>O<br>N<br>G<br> text"
             ],
             "type": "waterfall",
+            "textangle": 0,
             "textinfo": "text",
             "textposition": "inside",
             "insidetextanchor": "middle",
@@ -146,8 +153,7 @@
         },
         "uniformtext": {
             "mode": "hide",
-            "minsize": 8,
-            "orientation": "h"
+            "minsize": 8
         },
         "barmode": "stack",
         "xaxis": {

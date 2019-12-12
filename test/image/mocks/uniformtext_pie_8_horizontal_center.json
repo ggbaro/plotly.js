@@ -8,6 +8,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -29,6 +30,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -50,6 +52,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -71,6 +74,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -92,6 +96,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -113,6 +118,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -134,6 +140,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -155,6 +162,7 @@
                 0.25
             ],
             "type": "pie",
+            "insidetextorientation": "h",
             "textposition": "auto",
             "hole": 0.5,
             "domain": {
@@ -186,8 +194,7 @@
         },
         "uniformtext": {
             "mode": "hide",
-            "minsize": 8,
-            "orientation": "h"
+            "minsize": 8
         }
     }
 }

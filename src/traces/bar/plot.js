@@ -380,9 +380,7 @@ function appendBarText(gd, plotinfo, bar, cd, i, x0, x1, y0, y1, opts, makeOnCom
         }
     }
 
-    var angle = (
-        fullLayout.uniformtext.orientation === 'h'
-    ) ? 0 : trace.textangle;
+    var angle = trace.textangle;
 
     // compute text transform
     var transform, constrained;

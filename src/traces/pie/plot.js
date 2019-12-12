@@ -167,7 +167,7 @@ function plot(gd, cdModule) {
                     if(textPosition === 'outside') {
                         transform = transformOutsideText(textBB, pt);
                     } else {
-                        transform = transformInsideText(textBB, pt, cd0, fullLayout);
+                        transform = transformInsideText(textBB, pt, cd0);
                         if(textPosition === 'auto' && transform.scale < 1) {
                             var font2 = Lib.extendFlat({}, trace.outsidetextfont, {});
                             font2.size = Math.max(font2.size, fullLayout.uniformtext.minsize || 0);
@@ -557,7 +557,7 @@ function prerenderTitles(cdModule, gd) {
     }
 }
 
-function transformInsideText(textBB, pt, cd0, fullLayout) {
+function transformInsideText(textBB, pt, cd0) {
     var textDiameter = Math.sqrt(textBB.width * textBB.width + textBB.height * textBB.height);
     var halfAngle = pt.halfangle;
     var midAngle = pt.midangle;
@@ -565,21 +565,11 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
     var rInscribed = pt.rInscribed;
     var r = cd0.r || pt.rpx1;
     var orientation = cd0.trace.insidetextorientation;
-    var uniformtext = fullLayout.uniformtext;
     var allTransforms = [];
 
     var isCircle = (ring === 1) && (Math.abs(pt.startangle - pt.stopangle) === Math.PI * 2);
 
-    if(
-        isCircle ||
-        (!uniformtext.mode && (
-            orientation === 'auto' ||
-            orientation === 'h'
-        )) || (
-            uniformtext.orientation === 'h' ||
-            uniformtext.orientation === 'auto'
-        )
-    ) {
+    if(isCircle || orientation === 'auto' || orientation === 'h') {
         // max size text can be inserted inside without rotating it
         // this inscribes the text rectangle in a circle, which is then inscribed
         // in the slice, so it will be an underestimate, which some day we may want
@@ -597,10 +587,7 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
         allTransforms.push(transform);
     }
 
-    if(
-        (!uniformtext.mode && orientation === 'h') ||
-        uniformtext.orientation === 'h'
-    ) {
+    if(orientation === 'h') {
         // max size if text is placed (horizontally) at the top or bottom of the arc
 
         var considerCrossing = function(angle, key) {
@@ -628,27 +615,11 @@ function transformInsideText(textBB, pt, cd0, fullLayout) {
         }
     }
 
-    if(
-        (!uniformtext.mode && (
-            orientation === 'auto' ||
-            orientation === 'r'
-        )) || (
-            uniformtext.orientation === 'r' ||
-            uniformtext.orientation === 'auto'
-        )
-    ) {
+    if(orientation === 'auto' || orientation === 'r') {
         allTransforms.push(calcRadTransform(textBB, r, ring, halfAngle, midAngle));
     }
 
-    if(
-        (!uniformtext.mode && (
-            orientation === 'auto' ||
-            orientation === 't'
-        )) || (
-            uniformtext.orientation === 't' ||
-            uniformtext.orientation === 'auto'
-        )
-    ) {
+    if(orientation === 'auto' || orientation === 't') {
         allTransforms.push(calcTanTransform(textBB, r, ring, halfAngle, midAngle));
     }
 
