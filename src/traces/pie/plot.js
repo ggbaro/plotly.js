@@ -586,7 +586,7 @@ function transformInsideText(textBB, pt, cd0) {
         allTransforms.push(transform);
     }
 
-    if(isHorizontal) {
+    if(!isAuto) {
         // max size if text is placed (horizontally) at the top or bottom of the arc
 
         var considerCrossing = function(angle, key) {
@@ -609,8 +609,12 @@ function transformInsideText(textBB, pt, cd0) {
         };
 
         for(var i = 3; i >= -3; i--) { // to cover all cases with trace.rotation added
-            considerCrossing(Math.PI * i, 'tan');
-            considerCrossing(Math.PI * (i + 0.5), 'rad');
+            if(isHorizontal || isTangential) {
+                considerCrossing(Math.PI * i, 'tan');
+            }
+            if(isHorizontal || isRadial) {
+                considerCrossing(Math.PI * (i + 0.5), 'rad');
+            }
         }
     }
 
